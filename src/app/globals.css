@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #0f1117;
+  background-image: radial-gradient(circle at top, rgba(29, 158, 117, 0.16), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(55, 138, 221, 0.14), transparent 30%);
+  color: #fff;
+}
+
+* {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Custom select arrow aligned with rounded inputs */
+select.select-styled {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='rgba(255,255,255,0.45)'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1.25rem 1.25rem;
+  padding-right: 2.75rem;
+}

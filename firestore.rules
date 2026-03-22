@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    match /polls/{pollId} {
+      // Public read (stats are embedded in the poll doc)
+      allow read: if resource.data.isPublic == true;
+      allow write: if isAdmin();
+
+      match /candidates/{candidateId} {
+        // Public read (vote data is embedded in candidate docs)
+        allow read: if get(/databases/$(database)/documents/polls/$(pollId)).data.isPublic == true;
+        // Admin manages candidate info; Cloud Functions update vote data via admin SDK
+        allow write: if isAdmin();
+      }
+
+      match /votes/{voteId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+
+      match /voterLocks/{lockId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /candidateRequests/{requestId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /fraudSignals/{signalId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

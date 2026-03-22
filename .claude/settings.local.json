@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(PATH=\"/Users/richarcangui/.nvm/versions/node/v20.20.1/bin:$PATH\" npx tsc --noEmit)",
+      "Bash(npx tsc:*)",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs kill:*)",
+      "Bash(python3 -c \"import sys,json; print\\(json.dumps\\(json.load\\(sys.stdin\\)\\)\\)\")",
+      "Bash(xargs ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next:*)"
+    ]
+  }
+}
