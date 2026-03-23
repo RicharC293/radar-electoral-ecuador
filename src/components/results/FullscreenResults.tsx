@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
@@ -68,6 +69,20 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
       {/* Ticker */}
       <div className="border-t border-white/5 px-5 py-3">
         <VoteTicker city={poll.lastVoteCity} />
+      </div>
+
+      {/* Back to vote */}
+      <div className="px-5 pb-5">
+        <Link
+          href="/"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 12H4l8-8 8 8h-5" />
+            <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+          </svg>
+          Participar en el sondeo
+        </Link>
       </div>
 
     </section>
