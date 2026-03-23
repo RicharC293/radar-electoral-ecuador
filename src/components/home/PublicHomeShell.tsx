@@ -182,10 +182,12 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
         setStep("done");
       }
     } catch (cause) {
+      const msg = cause instanceof Error ? cause.message : "Intenta nuevamente.";
+      const isAlready = msg.includes("Ya registramos");
       pushToast({
-        tone: "error",
-        title: "No pudimos registrar tu opinión",
-        description: cause instanceof Error ? cause.message : "Intenta nuevamente.",
+        tone: isAlready ? "info" : "error",
+        title: isAlready ? "Ya participaste" : "Algo salió mal",
+        description: msg,
       });
     } finally {
       setLoadingId(null);

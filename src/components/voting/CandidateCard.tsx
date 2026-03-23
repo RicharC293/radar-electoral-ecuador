@@ -41,11 +41,12 @@ export function CandidateCard({
         description: `Tu respaldo a ${candidate.fullName} fue registrado.`
       });
     } catch (cause) {
+      const msg = cause instanceof Error ? cause.message : "Intenta nuevamente en unos segundos.";
+      const isAlready = msg.includes("Ya registramos");
       pushToast({
-        tone: "error",
-        title: "No pudimos registrar tu opinión",
-        description:
-          cause instanceof Error ? cause.message : "Intenta nuevamente en unos segundos."
+        tone: isAlready ? "info" : "error",
+        title: isAlready ? "Ya participaste" : "Algo salió mal",
+        description: msg,
       });
     }
   }
