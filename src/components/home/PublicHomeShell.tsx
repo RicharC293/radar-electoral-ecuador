@@ -288,8 +288,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
                 >
                   {/* Photo — grayscale */}
                   <div
-                    className="relative size-20 overflow-hidden rounded-2xl grayscale"
-                    style={{ backgroundColor: candidate.color }}
+                    className="relative size-20 overflow-hidden rounded-2xl grayscale bg-white/10"
                   >
                     {candidate.photoUrl ? (
                       <Image
@@ -335,26 +334,17 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
                 key={candidate.id}
                 className={`group relative flex flex-col items-center gap-3 rounded-3xl border p-4 text-center transition-all ${
                   isHighlighted
-                    ? "border-white/25 ring-2 ring-white/20"
+                    ? step === "negative"
+                      ? "border-rose-500/40 bg-rose-500/10 ring-2 ring-rose-500/20"
+                      : "border-emerald-500/40 bg-emerald-500/10 ring-2 ring-emerald-500/20"
                     : isSameAsOtherVote
-                      ? "border-white/5 opacity-40"
-                      : "border-white/8"
+                      ? "border-white/5 bg-white/[0.02] opacity-40"
+                      : "border-white/8 bg-white/[0.04]"
                 } ${isDisabled && !isHighlighted ? "opacity-40" : ""}`}
-                style={{
-                  backgroundColor: isHighlighted
-                    ? `${candidate.color}55`
-                    : isSameAsOtherVote
-                      ? "rgba(255,255,255,0.02)"
-                      : `${candidate.color}30`,
-                  borderColor: isHighlighted
-                    ? `${candidate.color}90`
-                    : undefined,
-                }}
               >
                 {/* Photo */}
                 <div
-                  className="relative size-20 overflow-hidden rounded-2xl"
-                  style={{ backgroundColor: candidate.color }}
+                  className="relative size-20 overflow-hidden rounded-2xl bg-white/10"
                 >
                   {candidate.photoUrl ? (
                     <Image

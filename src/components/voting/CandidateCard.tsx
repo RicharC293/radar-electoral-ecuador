@@ -54,7 +54,7 @@ export function CandidateCard({
   return (
     <article className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-glow">
       <div className="mb-4 flex items-center gap-4">
-        <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl" style={{ backgroundColor: candidate.color }}>
+        <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-white/10">
           {candidate.photoUrl ? (
             <Image src={candidate.photoUrl} alt={candidate.fullName} fill className="object-cover" sizes="56px" />
           ) : (
@@ -73,8 +73,7 @@ export function CandidateCard({
         type="button"
         onClick={() => void handleVote()}
         disabled={loading || done}
-        className="w-full rounded-2xl px-4 py-3 font-medium text-slate-950 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        style={{ backgroundColor: candidate.color }}
+        className="w-full rounded-2xl bg-emerald-500/15 px-4 py-3 font-medium text-emerald-400 transition hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Registrando..." : done ? "Registrado" : "Respaldar"}
       </button>
