@@ -256,13 +256,6 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
 
   return (
     <div className="flex flex-1 flex-col gap-5">
-      {/* Location explainer — shown once before the browser dialog */}
-      <LocationExplainer
-        visible={geoStatus === "idle" && step !== "done"}
-        onAllow={requestGeo}
-        onDismiss={dismissGeo}
-      />
-
       {/* Step indicator */}
       {step === "positive" && (
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center">
@@ -457,6 +450,13 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
           Radar informativo · No reemplaza ningún proceso electoral oficial
         </p>
       </div>
+
+      {/* Location permission explainer modal */}
+      <LocationExplainer
+        visible={geoStatus === "idle" && step !== "done"}
+        onAllow={requestGeo}
+        onDismiss={dismissGeo}
+      />
 
       {/* Request candidate modal */}
       <RequestCandidateModal

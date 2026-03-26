@@ -15,43 +15,60 @@ export function LocationExplainer({
     <AnimatePresence>
       {visible ? (
         <motion.div
-          className="mb-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04]"
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6 backdrop-blur-sm sm:items-center sm:pb-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onDismiss}
         >
-          <div className="px-4 py-3.5">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 shrink-0 text-base leading-none">📍</span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white/80">
+          <motion.div
+            className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl"
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 40, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top accent */}
+            <div className="h-1 w-full bg-gradient-to-r from-blue-400 via-sky-400 to-blue-500" />
+
+            <div className="flex flex-col items-center gap-4 px-6 pb-6 pt-7 text-center">
+              {/* Icon */}
+              <div className="flex size-14 items-center justify-center rounded-full bg-blue-400/10 text-2xl">
+                📍
+              </div>
+
+              {/* Text */}
+              <div>
+                <h2 className="text-base font-semibold text-white">
                   ¿Por qué pedimos tu ubicación?
-                </p>
-                <p className="mt-0.5 text-xs leading-relaxed text-white/45">
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-white/50">
                   La usamos únicamente para mostrar de qué ciudad o provincia
-                  provienen las opiniones. No compartimos tu ubicación con nadie
-                  ni la almacenamos de forma identificable.
+                  provienen las opiniones. No compartimos tu ubicación con
+                  nadie ni la almacenamos de forma identificable.
                 </p>
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onAllow}
-                    className="rounded-xl bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-white/15"
-                  >
-                    Permitir ubicación
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onDismiss}
-                    className="px-2 py-1.5 text-xs text-white/35 transition hover:text-white/55"
-                  >
-                    Ahora no
-                  </button>
-                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex w-full flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={onAllow}
+                  className="w-full rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-white/90 active:scale-[0.98]"
+                >
+                  Permitir ubicación
+                </button>
+                <button
+                  type="button"
+                  onClick={onDismiss}
+                  className="w-full rounded-2xl py-2.5 text-sm text-white/40 transition hover:text-white/60"
+                >
+                  Ahora no
+                </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
