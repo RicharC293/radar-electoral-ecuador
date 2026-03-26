@@ -17,6 +17,12 @@ service cloud.firestore {
         allow write: if isAdmin();
       }
 
+      match /candidateStats/{candidateId}/daily/{docId} {
+        // Aggregated trend data — readable by admins for charting
+        allow read: if isAdmin();
+        allow write: if false; // written only by Cloud Functions
+      }
+
       match /votes/{voteId} {
         allow read: if isAdmin();
         allow write: if false;
