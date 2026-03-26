@@ -124,6 +124,9 @@ function SiteFooter() {
         <p className="text-[11px] leading-relaxed text-white/20">
           Radar informativo · No reemplaza ningún proceso electoral oficial
         </p>
+        <p className="text-[11px] text-white/15">
+          Un producto de Norva Company
+        </p>
         <div className="flex gap-3 text-[11px] text-white/25">
           <Link href="/terminos" className="underline underline-offset-2 hover:text-white/45">
             Términos y Condiciones

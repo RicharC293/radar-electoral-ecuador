@@ -18,8 +18,8 @@ service cloud.firestore {
       }
 
       match /candidateStats/{candidateId}/daily/{docId} {
-        // Aggregated trend data — readable by admins for charting
-        allow read: if isAdmin();
+        // Aggregated trend data — public read (non-personal, same as candidate vote counts)
+        allow read: if true;
         allow write: if false; // written only by Cloud Functions
       }
 
