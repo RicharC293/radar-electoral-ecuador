@@ -16,7 +16,9 @@ function normalizeVoteError(cause: unknown) {
   const code =
     cause && typeof cause === "object" && "code" in cause ? String(cause.code) : "";
 
-  if (code.includes("already-exists") || message.includes("Ya registramos tu voto")) {
+  if (code.includes("already-exists")) {
+    // New format includes a date: "Tu opinión ya fue registrada. Podrás cambiarla a partir del..."
+    if (message.includes("Podrás cambiarla")) return message;
     return "Ya registramos tu opinión.";
   }
 

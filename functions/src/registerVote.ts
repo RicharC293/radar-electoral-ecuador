@@ -54,6 +54,8 @@ export const registerVote = onCall(
       const voteRef = pollRef.collection("votes").doc(randomUUID());
       const dailyRef = pollRef.collection("statsDaily").doc(new Date().toISOString().slice(0, 10));
 
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
       const result = await db.runTransaction(async (transaction) => {
         const [pollDoc, candidateDoc, lockDoc] = await Promise.all([
           transaction.get(pollRef),
@@ -74,10 +76,30 @@ export const registerVote = onCall(
           throw new HttpsError("failed-precondition", "Candidatura no disponible.");
         }
 
+        let isUpdate = false;
+        let previousCandidateId: string | null = null;
+
         if (lockDoc.exists) {
-          throw new HttpsError("already-exists", sentiment === "positive"
-            ? "Ya registramos tu respaldo."
-            : "Ya registramos tu opinión negativa.");
+          const lockData = lockDoc.data()!;
+          const votedAt = (lockData.createdAt as Timestamp).toDate();
+          const msSinceVote = Date.now() - votedAt.getTime();
+
+          if (msSinceVote < THIRTY_DAYS_MS) {
+            const canChangeAt = new Date(votedAt.getTime() + THIRTY_DAYS_MS);
+            const formatted = canChangeAt.toLocaleDateString("es-EC", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              timeZone: "America/Guayaquil",
+            });
+            throw new HttpsError(
+              "already-exists",
+              `Tu opinión ya fue registrada. Podrás cambiarla a partir del ${formatted}.`
+            );
+          }
+
+          isUpdate = true;
+          previousCandidateId = lockData.candidateId as string;
         }
 
         // Prevent voting positive and negative for the same candidate
@@ -98,19 +120,36 @@ export const registerVote = onCall(
         }
 
         const timestamp = Timestamp.now();
-        const previousCandidateVotes = Number(candidateDoc.data()?.totalVotes ?? 0);
-        const nextCandidateVotes = previousCandidateVotes + 1;
+        const sentimentField = sentiment === "positive" ? "positiveVotes" : "negativeVotes";
+        const isChangingCandidate = isUpdate && previousCandidateId !== null && previousCandidateId !== input.candidateId;
+        const candidateVoteIncrement = isUpdate && !isChangingCandidate ? 0 : 1;
         const previousTotalVotes = Number(pollData.totalVotes ?? 0);
-        const nextTotalVotes = previousTotalVotes + 1;
-        const uniqueProvinces = Number(pollData.uniqueProvinces ?? 0);
+        const nextTotalVotes = isUpdate ? previousTotalVotes : previousTotalVotes + 1;
+        const nextCandidateVotes = Number(candidateDoc.data()?.totalVotes ?? 0) + candidateVoteIncrement;
 
-        transaction.create(lockRef, {
+        // Decrement old candidate if switching candidate
+        if (isChangingCandidate) {
+          const oldCandidateRef = pollRef.collection("candidates").doc(previousCandidateId!);
+          transaction.set(
+            oldCandidateRef,
+            {
+              totalVotes: FieldValue.increment(-1),
+              [sentimentField]: FieldValue.increment(-1),
+            },
+            { merge: true }
+          );
+        }
+
+        // Create or overwrite the voter lock (resets the 30-day window)
+        transaction.set(lockRef, {
           fingerprintHash,
           candidateId: input.candidateId,
           sentiment,
-          createdAt: timestamp
+          createdAt: timestamp,
+          ...(isUpdate ? { updatedAt: timestamp } : {}),
         });
 
+        // New vote document (kept as audit trail)
         transaction.create(voteRef, {
           candidateId: input.candidateId,
           sentiment,
@@ -124,40 +163,47 @@ export const registerVote = onCall(
           longitudeApprox:
             typeof input.longitude === "number" ? Number(input.longitude.toFixed(2)) : null,
           userAgent,
-          createdAt: timestamp
+          createdAt: timestamp,
+          ...(isUpdate ? { isUpdate: true } : {}),
         });
 
-        const sentimentField = sentiment === "positive" ? "positiveVotes" : "negativeVotes";
+        // Update new candidate vote counts
         transaction.set(
           candidateRef,
           {
-            totalVotes: FieldValue.increment(1),
-            [sentimentField]: FieldValue.increment(1),
-            lastVoteAt: timestamp
+            ...(candidateVoteIncrement !== 0
+              ? {
+                  totalVotes: FieldValue.increment(candidateVoteIncrement),
+                  [sentimentField]: FieldValue.increment(candidateVoteIncrement),
+                }
+              : {}),
+            lastVoteAt: timestamp,
           },
           { merge: true }
         );
 
+        // Update poll
         transaction.set(
           pollRef,
           {
             totalVotes: nextTotalVotes,
-            totalVotersToday: FieldValue.increment(1),
-            uniqueProvinces,
+            ...(isUpdate ? {} : { totalVotersToday: FieldValue.increment(1) }),
+            uniqueProvinces: Number(pollData.uniqueProvinces ?? 0),
             lastVoteAt: timestamp,
             lastVoteCity: input.city ?? null,
-            lastVoteCandidateId: input.candidateId
+            lastVoteCandidateId: input.candidateId,
           },
           { merge: true }
         );
 
+        // Daily stats
         transaction.set(
           dailyRef,
           {
             dateKey: dailyRef.id,
             totalVotes: FieldValue.increment(1),
-            uniqueVoters: FieldValue.increment(1),
-            updatedAt: timestamp
+            ...(isUpdate ? {} : { uniqueVoters: FieldValue.increment(1) }),
+            updatedAt: timestamp,
           },
           { merge: true }
         );
@@ -165,7 +211,8 @@ export const registerVote = onCall(
         return {
           success: true as const,
           totalVotes: nextTotalVotes,
-          candidateTotal: nextCandidateVotes
+          candidateTotal: nextCandidateVotes,
+          isUpdate,
         };
       });
 

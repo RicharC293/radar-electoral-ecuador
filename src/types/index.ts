@@ -81,4 +81,5 @@ export interface RegisterVoteResult {
   success: true;
   totalVotes: number;
   candidateTotal: number;
+  isUpdate?: boolean;
 }

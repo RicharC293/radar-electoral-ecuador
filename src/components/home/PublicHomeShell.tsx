@@ -71,11 +71,17 @@ export function PublicHomeShell() {
   );
 }
 
-const VOTE_STORAGE_KEY = "radar-votes-v2";
+const VOTE_STORAGE_KEY = "radar-votes-v3";
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+interface SavedVoteEntry {
+  candidateId: string;
+  votedAt: number; // ms timestamp
+}
 
 interface SavedPollVotes {
-  positive?: string;
-  negative?: string;
+  positive?: SavedVoteEntry;
+  negative?: SavedVoteEntry;
 }
 
 function getSavedVotes(pollId: string): SavedPollVotes {
@@ -89,12 +95,12 @@ function getSavedVotes(pollId: string): SavedPollVotes {
   }
 }
 
-function saveVote(pollId: string, candidateId: string, sentiment: VoteSentiment) {
+function saveVote(pollId: string, candidateId: string, sentiment: VoteSentiment, votedAt = Date.now()) {
   try {
     const raw = localStorage.getItem(VOTE_STORAGE_KEY);
     const all = raw ? (JSON.parse(raw) as Record<string, SavedPollVotes>) : {};
     if (!all[pollId]) all[pollId] = {};
-    all[pollId][sentiment] = candidateId;
+    all[pollId][sentiment] = { candidateId, votedAt };
     localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(all));
   } catch {
     // localStorage not available
@@ -117,15 +123,35 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
   const [step, setStep] = useState<"positive" | "negative" | "done">("positive");
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [bioCandidate, setBioCandidate] = useState<Candidate | null>(null);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [positiveVotedAt, setPositiveVotedAt] = useState<number>(0);
 
   // Check returning voter
   useEffect(() => {
     const saved = getSavedVotes(pollId);
-    const hasPositive = !!saved.positive;
-    const hasNegative = !!saved.negative;
+    const positiveEntry = saved.positive;
+    const negativeEntry = saved.negative;
 
-    if (hasPositive) setPositiveVotedId(saved.positive!);
-    if (hasNegative) setNegativeVotedId(saved.negative!);
+    const hasPositive = !!positiveEntry;
+    const hasNegative = !!negativeEntry;
+
+    // Check if 30-day update window has opened
+    const positiveExpired =
+      hasPositive && positiveEntry!.votedAt > 0 && Date.now() - positiveEntry!.votedAt >= THIRTY_DAYS_MS;
+
+    if (positiveExpired) {
+      // Window open — let the user update both sentiments
+      setIsUpdateMode(true);
+      setPositiveVotedAt(0);
+      // Don't pre-fill votedIds so the grid looks fresh
+      return;
+    }
+
+    if (hasPositive) {
+      setPositiveVotedId(positiveEntry!.candidateId);
+      setPositiveVotedAt(positiveEntry!.votedAt);
+    }
+    if (hasNegative) setNegativeVotedId(negativeEntry!.candidateId);
 
     if (hasPositive && hasNegative) {
       setStep("done");
@@ -170,7 +196,10 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
         setNegativeVotedId(candidate.id);
       }
 
-      saveVote(pollId, candidate.id, sentiment);
+      const nowTs = Date.now();
+      saveVote(pollId, candidate.id, sentiment, nowTs);
+      if (sentiment === "positive") setPositiveVotedAt(nowTs);
+      if (isUpdateMode) setIsUpdateMode(false);
 
       pushToast({
         tone: "success",
@@ -189,27 +218,34 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     } catch (cause) {
       const msg = cause instanceof Error ? cause.message : "Intenta nuevamente.";
       const isAlready = msg.includes("Ya registramos");
+      const isLocked = msg.includes("Podrás cambiarla");
 
       if (isAlready) {
-        // Vote already exists in Firebase — sync localStorage and advance step
+        // Storage was cleared — recover state from Firebase signal
         if (sentiment === "positive") {
           setPositiveVotedId(candidate.id);
           saveVote(pollId, candidate.id, "positive");
-          if (allowNegativeVote) {
-            setStep("negative");
-          } else {
-            setStep("done");
-          }
+          allowNegativeVote ? setStep("negative") : setStep("done");
         } else {
           setNegativeVotedId(candidate.id);
           saveVote(pollId, candidate.id, "negative");
           setStep("done");
         }
+      } else if (isLocked) {
+        // Within the 30-day window — save to storage and lock the UI
+        if (sentiment === "positive") {
+          setPositiveVotedId(candidate.id);
+          saveVote(pollId, candidate.id, "positive");
+        } else {
+          setNegativeVotedId(candidate.id);
+          saveVote(pollId, candidate.id, "negative");
+        }
+        setStep("done");
       }
 
       pushToast({
-        tone: isAlready ? "info" : "error",
-        title: isAlready ? "Ya participaste" : "Algo salió mal",
+        tone: isAlready || isLocked ? "info" : "error",
+        title: isAlready ? "Ya participaste" : isLocked ? "Opinión registrada" : "Algo salió mal",
         description: msg,
       });
     } finally {
@@ -276,29 +312,44 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     <div className="flex flex-1 flex-col gap-5">
       {/* Step indicator */}
       {step === "positive" && (
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center">
-          <p className="text-sm font-medium text-emerald-300">👍 ¿A quién respaldas?</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-emerald-300/60">
-            Indica el candidato que consideras la mejor opción para el cargo.
+        <div className={`rounded-2xl border px-4 py-3 text-center ${isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-emerald-400/20 bg-emerald-400/10"}`}>
+          <p className={`text-sm font-medium ${isUpdateMode ? "text-sky-300" : "text-emerald-300"}`}>
+            {isUpdateMode ? "🔄 Actualiza tu respaldo" : "👍 ¿A quién respaldas?"}
+          </p>
+          <p className={`mt-1 text-[11px] leading-relaxed ${isUpdateMode ? "text-sky-300/60" : "text-emerald-300/60"}`}>
+            {isUpdateMode
+              ? "Han pasado 30 días — puedes cambiar tu opinión anterior."
+              : "Indica el candidato que consideras la mejor opción para el cargo."}
           </p>
           {allowNegativeVote && (
-            <p className="mt-1.5 text-[11px] text-emerald-300/40">Paso 1 de 2</p>
+            <p className={`mt-1.5 text-[11px] ${isUpdateMode ? "text-sky-300/40" : "text-emerald-300/40"}`}>Paso 1 de 2</p>
           )}
         </div>
       )}
 
       {step === "negative" && (
-        <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-center">
-          <p className="text-sm font-medium text-rose-300">👎 ¿A quién rechazas?</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-rose-300/60">
-            Señala el candidato que menos apoyarías para ocupar el cargo.
+        <div className={`rounded-2xl border px-4 py-3 text-center ${isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-rose-400/20 bg-rose-400/10"}`}>
+          <p className={`text-sm font-medium ${isUpdateMode ? "text-sky-300" : "text-rose-300"}`}>
+            {isUpdateMode ? "🔄 Actualiza tu rechazo" : "👎 ¿A quién rechazas?"}
           </p>
-          <p className="mt-1.5 text-[11px] text-rose-300/40">Paso 2 de 2 · Opcional</p>
+          <p className={`mt-1 text-[11px] leading-relaxed ${isUpdateMode ? "text-sky-300/60" : "text-rose-300/60"}`}>
+            {isUpdateMode
+              ? "Han pasado 30 días — puedes cambiar tu opinión anterior."
+              : "Señala el candidato que menos apoyarías para ocupar el cargo."}
+          </p>
+          <p className={`mt-1.5 text-[11px] ${isUpdateMode ? "text-sky-300/40" : "text-rose-300/40"}`}>
+            {isUpdateMode ? "Paso 2 de 2 · Opcional" : "Paso 2 de 2 · Opcional"}
+          </p>
         </div>
       )}
 
       {/* Thank you modal */}
-      <VoteConfirmation open={step === "done"} pollSlug={pollSlug} />
+      <VoteConfirmation
+        open={step === "done"}
+        pollSlug={pollSlug}
+        isUpdate={isUpdateMode}
+        canChangeAt={positiveVotedAt > 0 ? new Date(positiveVotedAt + THIRTY_DAYS_MS) : null}
+      />
 
       {/* Candidate grid */}
       {step !== "done" && (
