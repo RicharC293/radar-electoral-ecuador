@@ -9,6 +9,7 @@ import { CandidateBioModal } from "@/components/voting/CandidateBioModal";
 import { RequestCandidateModal } from "@/components/forms/RequestCandidateModal";
 import { InfoBanner } from "@/components/ui/InfoBanner";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { LocationExplainer } from "@/components/ui/LocationExplainer";
 import { usePublicPolls } from "@/hooks/usePublicPolls";
 import { useRealtimePollData } from "@/hooks/useRealtimePollData";
 import { useVote } from "@/hooks/useVote";
@@ -102,7 +103,7 @@ function saveVote(pollId: string, candidateId: string, sentiment: VoteSentiment)
 
 function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; pollSlug: string; allowNegativeVote: boolean }) {
   const { candidates, activeCandidates } = useRealtimePollData(pollId);
-  const { location } = useGeolocation();
+  const { location, status: geoStatus, request: requestGeo, dismiss: dismissGeo } = useGeolocation();
   const { submitVote } = useVote();
   const { pushToast } = useToast();
 
@@ -255,6 +256,13 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
 
   return (
     <div className="flex flex-1 flex-col gap-5">
+      {/* Location explainer — shown once before the browser dialog */}
+      <LocationExplainer
+        visible={geoStatus === "idle" && step !== "done"}
+        onAllow={requestGeo}
+        onDismiss={dismissGeo}
+      />
+
       {/* Step indicator */}
       {step === "positive" && (
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center">

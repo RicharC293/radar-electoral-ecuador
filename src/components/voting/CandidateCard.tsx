@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useToast } from "@/components/ui/ToastProvider";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -16,7 +16,9 @@ export function CandidateCard({
   pollId: string;
   candidate: Candidate;
 }) {
-  const { location } = useGeolocation();
+  const { location, request: requestGeo } = useGeolocation();
+  // Auto-request in standalone card context (no LocationExplainer wrapper)
+  useEffect(() => { requestGeo(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const { submitVote, loading, success, error } = useVote();
   const { pushToast } = useToast();
   const [done, setDone] = useState(false);
