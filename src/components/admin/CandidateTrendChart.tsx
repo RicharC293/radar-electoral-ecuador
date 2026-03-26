@@ -89,12 +89,12 @@ export function CandidateTrendChart({
             labelStyle={{ color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}
             formatter={(value, name) => [
               value ?? 0,
-              name === "positiveVotes" ? "Respaldos" : "Rechazos",
+              name === "positiveVotes" ? "Apoyos" : "Rechazos",
             ]}
           />
           <Legend
             formatter={(value) =>
-              value === "positiveVotes" ? "Respaldos" : "Rechazos"
+              value === "positiveVotes" ? "Apoyos" : "Rechazos"
             }
             wrapperStyle={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}
           />

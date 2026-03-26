@@ -30,7 +30,7 @@ export function PublicHomeShell() {
       {/* Header */}
       <header className="mb-6 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-white/40">Radar Electoral</p>
-        <h1 className="mt-2 text-2xl font-semibold text-white">¿A quién respaldas?</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-white">¿A quién apoyas?</h1>
       </header>
 
       {/* Poll selector */}
@@ -180,11 +180,11 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
 
     // Prevent voting same candidate for both sentiments
     if (sentiment === "positive" && negativeVotedId === candidate.id) {
-      pushToast({ tone: "error", title: "No permitido", description: "No puedes respaldar al candidato que rechazaste." });
+      pushToast({ tone: "error", title: "No permitido", description: "No puedes apoyar al candidato que rechazaste." });
       return;
     }
     if (sentiment === "negative" && positiveVotedId === candidate.id) {
-      pushToast({ tone: "error", title: "No permitido", description: "No puedes rechazar al candidato que respaldaste." });
+      pushToast({ tone: "error", title: "No permitido", description: "No puedes rechazar al candidato que apoyaste." });
       return;
     }
 
@@ -227,9 +227,9 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
 
       pushToast({
         tone: "success",
-        title: sentiment === "positive" ? "Respaldo registrado" : "Opinión registrada",
+        title: sentiment === "positive" ? "Apoyo registrado" : "Opinión registrada",
         description: sentiment === "positive"
-          ? `Respaldaste a ${candidate.fullName}.`
+          ? `Apoyaste a ${candidate.fullName}.`
           : `Registraste tu rechazo a ${candidate.fullName}.`,
       });
 
@@ -352,10 +352,20 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
   return (
     <div className="flex flex-1 flex-col gap-5">
       {/* Step indicator */}
+      {/* Election mode notice when localStorage was cleared */}
+      {step === "positive" && electionModeActive && !isElectionMode && (
+        <div className="rounded-2xl border border-amber-400/15 bg-amber-400/[0.07] px-4 py-3 text-center">
+          <p className="text-xs font-medium text-amber-300">🗳️ Modo Elecciones activo</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-amber-300/60">
+            Si ya participaste antes, este voto actualizará tu opinión anterior.
+          </p>
+        </div>
+      )}
+
       {step === "positive" && (
         <div className={`rounded-2xl border px-4 py-3 text-center ${isElectionMode ? "border-amber-400/20 bg-amber-400/10" : isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-emerald-400/20 bg-emerald-400/10"}`}>
           <p className={`text-sm font-medium ${isElectionMode ? "text-amber-300" : isUpdateMode ? "text-sky-300" : "text-emerald-300"}`}>
-            {isElectionMode ? "🗳️ Modo Elecciones — Actualiza tu respaldo" : isUpdateMode ? "🔄 Actualiza tu respaldo" : "👍 ¿A quién respaldas?"}
+            {isElectionMode ? "🗳️ Modo Elecciones — Actualiza tu apoyo" : isUpdateMode ? "🔄 Actualiza tu apoyo" : "👍 ¿A quién apoyas?"}
           </p>
           <p className={`mt-1 text-[11px] leading-relaxed ${isElectionMode ? "text-amber-300/60" : isUpdateMode ? "text-sky-300/60" : "text-emerald-300/60"}`}>
             {isElectionMode
@@ -520,12 +530,12 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
                   {isLoading
                     ? "Registrando..."
                     : isPositiveVoted && step === "negative"
-                      ? "Respaldado ✓"
+                      ? "Apoyado ✓"
                       : isHighlighted
-                        ? step === "negative" ? "Rechazado ✓" : "Respaldado ✓"
+                        ? step === "negative" ? "Rechazado ✓" : "Apoyado ✓"
                         : step === "negative"
                           ? "Rechazar"
-                          : "Respaldar"}
+                          : "Apoyar"}
                 </button>
               </div>
             );

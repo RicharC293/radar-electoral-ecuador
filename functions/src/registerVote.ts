@@ -128,14 +128,14 @@ export const registerVote = onCall(
             pollRef.collection("voterLocks").doc(`${fingerprintHash}_positive`)
           );
           if (positiveLock.exists && positiveLock.data()?.candidateId === input.candidateId) {
-            throw new HttpsError("failed-precondition", "No puedes rechazar al candidato que respaldaste.");
+            throw new HttpsError("failed-precondition", "No puedes rechazar al candidato que apoyaste.");
           }
         } else {
           const negativeLock = await transaction.get(
             pollRef.collection("voterLocks").doc(`${fingerprintHash}_negative`)
           );
           if (negativeLock.exists && negativeLock.data()?.candidateId === input.candidateId) {
-            throw new HttpsError("failed-precondition", "No puedes respaldar al candidato que rechazaste.");
+            throw new HttpsError("failed-precondition", "No puedes apoyar al candidato que rechazaste.");
           }
         }
 

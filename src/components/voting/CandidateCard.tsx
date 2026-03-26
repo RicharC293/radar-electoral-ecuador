@@ -38,7 +38,7 @@ export function CandidateCard({
       pushToast({
         tone: "success",
         title: "Opinión registrada",
-        description: `Tu respaldo a ${candidate.fullName} fue registrado.`
+        description: `Tu apoyo a ${candidate.fullName} fue registrado.`
       });
     } catch (cause) {
       const msg = cause instanceof Error ? cause.message : "Intenta nuevamente en unos segundos.";
@@ -75,7 +75,7 @@ export function CandidateCard({
         disabled={loading || done}
         className="w-full rounded-2xl bg-emerald-500/15 px-4 py-3 font-medium text-emerald-400 transition hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Registrando..." : done ? "Registrado" : "Respaldar"}
+        {loading ? "Registrando..." : done ? "Registrado" : "Apoyar"}
       </button>
 
       {success ? <p className="mt-3 text-sm text-emerald-300">Tu opinión fue registrada.</p> : null}
