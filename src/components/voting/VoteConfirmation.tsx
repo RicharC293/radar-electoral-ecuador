@@ -45,6 +45,14 @@ export function VoteConfirmation({
                 </p>
               </div>
 
+              {/* One-vote notice */}
+              <div className="flex w-full items-start gap-2.5 rounded-2xl border border-amber-400/15 bg-amber-400/[0.07] px-4 py-3 text-left">
+                <span className="mt-px shrink-0 text-sm leading-none">🔒</span>
+                <p className="text-xs leading-relaxed text-amber-200/70">
+                  Solo se permite <strong className="font-semibold text-amber-200/90">una participación por persona</strong>. Tu voto ya fue registrado y no podrá modificarse.
+                </p>
+              </div>
+
               {/* CTA button */}
               <Link
                 href={`/resultados/${pollSlug}`}
