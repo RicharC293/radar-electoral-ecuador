@@ -1,6 +1,6 @@
 "use client";
 
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 import { db } from "@/lib/firebase/config";
@@ -18,17 +18,12 @@ export function usePublicPolls() {
       where("status", "==", "live")
     );
 
-    return onSnapshot(
-      target,
-      (snapshot) => {
+    getDocs(target)
+      .then((snapshot) => {
         setPolls(snapshot.docs.map((doc) => toPoll(doc.id, doc.data())));
-        setLoading(false);
-      },
-      () => {
-        setPolls([]);
-        setLoading(false);
-      }
-    );
+      })
+      .catch(() => setPolls([]))
+      .finally(() => setLoading(false));
   }, []);
 
   return { polls, loading };

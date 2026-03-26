@@ -1,6 +1,6 @@
 "use client";
 
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 import { db } from "@/lib/firebase/config";
@@ -13,29 +13,32 @@ const defaultConfig: GlobalConfig = {
   electionModeActive: false,
 };
 
+const POLL_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
+
+async function fetchGlobalConfig(): Promise<GlobalConfig> {
+  try {
+    const snap = await getDoc(doc(db, "config", "global"));
+    if (!snap.exists()) return defaultConfig;
+    return { electionModeActive: snap.data().electionModeActive === true };
+  } catch {
+    return defaultConfig;
+  }
+}
+
 export function useGlobalConfig() {
   const [config, setConfig] = useState<GlobalConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const ref = doc(db, "config", "global");
-    const unsub = onSnapshot(
-      ref,
-      (snap) => {
-        setConfig(
-          snap.exists()
-            ? { electionModeActive: snap.data().electionModeActive === true }
-            : defaultConfig
-        );
-        setLoading(false);
-      },
-      () => {
-        // Permission denied or network error — fall back to defaults
-        setConfig(defaultConfig);
-        setLoading(false);
-      }
-    );
-    return unsub;
+    // Initial fetch
+    fetchGlobalConfig().then((c) => { setConfig(c); setLoading(false); });
+
+    // Poll every 2 minutes instead of keeping a real-time listener open
+    const interval = setInterval(() => {
+      fetchGlobalConfig().then(setConfig);
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
   }, []);
 
   return { config, loading };

@@ -8,6 +8,22 @@ import { secureHash } from "./lib/hash";
 import { enforceIpVoteRateLimit } from "./lib/rate-limit";
 import { registerVoteSchema } from "./lib/validation";
 
+// In-memory cache for global config — avoids 1 Firestore read per vote
+interface CachedConfig { electionModeActive: boolean; cachedAt: number }
+let configCache: CachedConfig | null = null;
+const CONFIG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function getGlobalConfig(): Promise<{ electionModeActive: boolean }> {
+  const now = Date.now();
+  if (configCache && now - configCache.cachedAt < CONFIG_CACHE_TTL_MS) {
+    return configCache;
+  }
+  const snap = await db.collection("config").doc("global").get();
+  const electionModeActive = snap.exists && snap.data()?.electionModeActive === true;
+  configCache = { electionModeActive, cachedAt: now };
+  return configCache;
+}
+
 function getIp(request: {
   rawRequest: {
     headers: Record<string, string | string[] | undefined>;
@@ -56,13 +72,14 @@ export const registerVote = onCall(
 
       const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+      // Read global config from cache (avoids 1 Firestore read per vote)
+      const { electionModeActive } = await getGlobalConfig();
+
       const result = await db.runTransaction(async (transaction) => {
-        const configRef = db.collection("config").doc("global");
-        const [pollDoc, candidateDoc, lockDoc, configDoc] = await Promise.all([
+        const [pollDoc, candidateDoc, lockDoc] = await Promise.all([
           transaction.get(pollRef),
           transaction.get(candidateRef),
           transaction.get(lockRef),
-          transaction.get(configRef),
         ]);
 
         if (!pollDoc.exists) {
@@ -81,8 +98,6 @@ export const registerVote = onCall(
         let isUpdate = false;
         let previousCandidateId: string | null = null;
         let isElectionModeUpdate = false;
-
-        const electionModeActive = configDoc.exists && configDoc.data()?.electionModeActive === true;
 
         if (lockDoc.exists) {
           const lockData = lockDoc.data()!;
