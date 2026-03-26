@@ -144,6 +144,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     if (electionModeActive && hasPositive && !saved.electionModeUsed) {
       setIsUpdateMode(true);
       setIsElectionMode(true);
+      setStep("positive"); // reset step in case it was already "done"
       setPositiveVotedId(positiveEntry!.candidateId);
       if (hasNegative) setNegativeVotedId(negativeEntry!.candidateId);
       return;
