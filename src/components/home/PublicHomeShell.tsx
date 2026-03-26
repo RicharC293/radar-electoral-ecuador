@@ -209,12 +209,13 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
           : `Registraste tu rechazo a ${candidate.fullName}.`,
       });
 
-      // Advance step
+      // Advance step and scroll to top so the new indicator is visible
       if (sentiment === "positive" && allowNegativeVote) {
         setStep("negative");
       } else {
         setStep("done");
       }
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (cause) {
       const msg = cause instanceof Error ? cause.message : "Intenta nuevamente.";
       const isAlready = msg.includes("Ya registramos");
@@ -231,6 +232,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
           saveVote(pollId, candidate.id, "negative");
           setStep("done");
         }
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (isLocked) {
         // Within the 30-day window — save to storage and lock the UI
         if (sentiment === "positive") {
@@ -241,6 +243,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
           saveVote(pollId, candidate.id, "negative");
         }
         setStep("done");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
       pushToast({
