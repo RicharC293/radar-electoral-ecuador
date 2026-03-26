@@ -53,10 +53,6 @@ function LiveContent({ poll }: { poll: Poll }) {
         </div>
       )}
 
-      {/* Ticker */}
-      <div className="mb-6">
-        <VoteTicker city={poll.lastVoteCity} />
-      </div>
 
       {/* Footer */}
       <footer className="text-center text-[11px] text-white/20">

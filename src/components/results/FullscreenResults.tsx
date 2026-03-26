@@ -72,10 +72,6 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
         ))}
       </div>
 
-      {/* Ticker */}
-      <div className="border-t border-white/5 px-5 py-3">
-        <VoteTicker city={poll.lastVoteCity} />
-      </div>
 
       {/* Back to vote + propose candidate */}
       <div className="flex flex-col gap-2 px-5 pb-5">
