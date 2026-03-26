@@ -9,6 +9,7 @@ import { ConfettiLayer } from "@/components/results/ConfettiLayer";
 import { VoteTicker } from "@/components/results/VoteTicker";
 import { CandidateBioModal } from "@/components/voting/CandidateBioModal";
 import { RequestCandidateModal } from "@/components/forms/RequestCandidateModal";
+import { InfoBanner } from "@/components/ui/InfoBanner";
 import { PulseDot } from "@/components/ui/PulseDot";
 import { useConfetti } from "@/hooks/useConfetti";
 import { useRealtimePollData } from "@/hooks/useRealtimePollData";
@@ -30,6 +31,9 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
 
   return (
     <>
+    <div className="mx-auto w-full max-w-lg">
+      <InfoBanner pollId={poll.id} />
+    </div>
     <section className="relative mx-auto w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-white/5 shadow-glow backdrop-blur">
       <ConfettiLayer active={confettiActive} />
 

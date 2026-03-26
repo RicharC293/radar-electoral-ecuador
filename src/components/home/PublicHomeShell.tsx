@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { VoteConfirmation } from "@/components/voting/VoteConfirmation";
 import { CandidateBioModal } from "@/components/voting/CandidateBioModal";
 import { RequestCandidateModal } from "@/components/forms/RequestCandidateModal";
+import { InfoBanner } from "@/components/ui/InfoBanner";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { usePublicPolls } from "@/hooks/usePublicPolls";
 import { useRealtimePollData } from "@/hooks/useRealtimePollData";
@@ -60,7 +61,10 @@ export function PublicHomeShell() {
           <p className="text-sm text-white/35">Vuelve pronto para participar.</p>
         </div>
       ) : (
-        <VotingGrid pollId={activePoll.id} pollSlug={activePoll.slug} allowNegativeVote={activePoll.allowNegativeVote} />
+        <>
+          <InfoBanner pollId={activePoll.id} />
+          <VotingGrid pollId={activePoll.id} pollSlug={activePoll.slug} allowNegativeVote={activePoll.allowNegativeVote} />
+        </>
       )}
     </main>
   );
