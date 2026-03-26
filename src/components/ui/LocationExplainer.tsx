@@ -41,7 +41,7 @@ export function LocationExplainer({
               {/* Text */}
               <div>
                 <h2 className="text-base font-semibold text-white">
-                  ¿Por qué pedimos tu ubicación?
+                  ¿Nos dejas usar tu ubicación?
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-white/50">
                   La usamos únicamente para mostrar de qué ciudad o provincia
