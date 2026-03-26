@@ -7,11 +7,13 @@ export function VoteConfirmation({
   open,
   pollSlug,
   isUpdate = false,
+  isElectionMode = false,
   canChangeAt = null,
 }: {
   open: boolean;
   pollSlug: string;
   isUpdate?: boolean;
+  isElectionMode?: boolean;
   canChangeAt?: Date | null;
 }) {
   const changeDate = canChangeAt
@@ -63,7 +65,11 @@ export function VoteConfirmation({
               <div className="flex w-full items-start gap-2.5 rounded-2xl border border-amber-400/15 bg-amber-400/[0.07] px-4 py-3 text-left">
                 <span className="mt-px shrink-0 text-sm leading-none">🔒</span>
                 <p className="text-xs leading-relaxed text-amber-200/70">
-                  {changeDate ? (
+                  {isElectionMode ? (
+                    <>
+                      Usaste tu cambio del <strong className="font-semibold text-amber-200/90">Modo Elecciones</strong>. Las restricciones normales de 30 días vuelven a aplicar desde ahora.
+                    </>
+                  ) : changeDate ? (
                     <>
                       Podrás volver a cambiar tu opinión a partir del{" "}
                       <strong className="font-semibold text-amber-200/90">{changeDate}</strong>.

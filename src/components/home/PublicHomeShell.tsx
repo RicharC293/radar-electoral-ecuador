@@ -14,6 +14,7 @@ import { usePublicPolls } from "@/hooks/usePublicPolls";
 import { useRealtimePollData } from "@/hooks/useRealtimePollData";
 import { useVote } from "@/hooks/useVote";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useGlobalConfig } from "@/hooks/useGlobalConfig";
 import { initialsFromName } from "@/lib/utils";
 import type { Candidate, VoteSentiment } from "@/types";
 
@@ -82,6 +83,7 @@ interface SavedVoteEntry {
 interface SavedPollVotes {
   positive?: SavedVoteEntry;
   negative?: SavedVoteEntry;
+  electionModeUsed?: boolean;
 }
 
 function getSavedVotes(pollId: string): SavedPollVotes {
@@ -112,6 +114,8 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
   const { location, status: geoStatus, request: requestGeo, dismiss: dismissGeo } = useGeolocation();
   const { submitVote } = useVote();
   const { pushToast } = useToast();
+  const { config: globalConfig } = useGlobalConfig();
+  const electionModeActive = globalConfig.electionModeActive;
 
   // Track votes per sentiment
   const [positiveVotedId, setPositiveVotedId] = useState<string | null>(null);
@@ -124,6 +128,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [bioCandidate, setBioCandidate] = useState<Candidate | null>(null);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [isElectionMode, setIsElectionMode] = useState(false);
   const [positiveVotedAt, setPositiveVotedAt] = useState<number>(0);
 
   // Check returning voter
@@ -135,15 +140,22 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     const hasPositive = !!positiveEntry;
     const hasNegative = !!negativeEntry;
 
+    // Election mode: bypass 30-day rule for one-time update
+    if (electionModeActive && hasPositive && !saved.electionModeUsed) {
+      setIsUpdateMode(true);
+      setIsElectionMode(true);
+      setPositiveVotedId(positiveEntry!.candidateId);
+      if (hasNegative) setNegativeVotedId(negativeEntry!.candidateId);
+      return;
+    }
+
     // Check if 30-day update window has opened
     const positiveExpired =
       hasPositive && positiveEntry!.votedAt > 0 && Date.now() - positiveEntry!.votedAt >= THIRTY_DAYS_MS;
 
     if (positiveExpired) {
-      // Window open — let the user update both sentiments
       setIsUpdateMode(true);
       setPositiveVotedAt(0);
-      // Don't pre-fill votedIds so the grid looks fresh
       return;
     }
 
@@ -160,7 +172,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     } else if (hasPositive) {
       setStep("done");
     }
-  }, [pollId, allowNegativeVote]);
+  }, [pollId, allowNegativeVote, electionModeActive]);
 
   async function handleVote(candidate: Candidate, sentiment: VoteSentiment) {
     if (loadingId) return;
@@ -200,6 +212,17 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
       saveVote(pollId, candidate.id, sentiment, nowTs);
       if (sentiment === "positive") setPositiveVotedAt(nowTs);
       if (isUpdateMode) setIsUpdateMode(false);
+      if (isElectionMode) {
+        setIsElectionMode(false);
+        // Mark election mode used in localStorage
+        try {
+          const raw = localStorage.getItem(VOTE_STORAGE_KEY);
+          const all = raw ? (JSON.parse(raw) as Record<string, SavedPollVotes>) : {};
+          if (!all[pollId]) all[pollId] = {};
+          all[pollId].electionModeUsed = true;
+          localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(all));
+        } catch { /* ignore */ }
+      }
 
       pushToast({
         tone: "success",
@@ -220,6 +243,7 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
       const msg = cause instanceof Error ? cause.message : "Intenta nuevamente.";
       const isAlready = msg.includes("Ya registramos");
       const isLocked = msg.includes("Podrás cambiarla");
+      const isElectionUsed = msg.includes("Ya usaste tu cambio durante el Modo Elecciones");
 
       if (isAlready) {
         // Storage was cleared — recover state from Firebase signal
@@ -244,11 +268,24 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
         }
         setStep("done");
         window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (isElectionUsed) {
+        // Already used the election mode update — lock and mark in localStorage
+        setIsElectionMode(false);
+        setIsUpdateMode(false);
+        try {
+          const raw = localStorage.getItem(VOTE_STORAGE_KEY);
+          const all = raw ? (JSON.parse(raw) as Record<string, SavedPollVotes>) : {};
+          if (!all[pollId]) all[pollId] = {};
+          all[pollId].electionModeUsed = true;
+          localStorage.setItem(VOTE_STORAGE_KEY, JSON.stringify(all));
+        } catch { /* ignore */ }
+        setStep("done");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
       pushToast({
-        tone: isAlready || isLocked ? "info" : "error",
-        title: isAlready ? "Ya participaste" : isLocked ? "Opinión registrada" : "Algo salió mal",
+        tone: isAlready || isLocked || isElectionUsed ? "info" : "error",
+        title: isAlready ? "Ya participaste" : isLocked ? "Opinión registrada" : isElectionUsed ? "Cambio ya utilizado" : "Algo salió mal",
         description: msg,
       });
     } finally {
@@ -315,33 +352,37 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     <div className="flex flex-1 flex-col gap-5">
       {/* Step indicator */}
       {step === "positive" && (
-        <div className={`rounded-2xl border px-4 py-3 text-center ${isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-emerald-400/20 bg-emerald-400/10"}`}>
-          <p className={`text-sm font-medium ${isUpdateMode ? "text-sky-300" : "text-emerald-300"}`}>
-            {isUpdateMode ? "🔄 Actualiza tu respaldo" : "👍 ¿A quién respaldas?"}
+        <div className={`rounded-2xl border px-4 py-3 text-center ${isElectionMode ? "border-amber-400/20 bg-amber-400/10" : isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-emerald-400/20 bg-emerald-400/10"}`}>
+          <p className={`text-sm font-medium ${isElectionMode ? "text-amber-300" : isUpdateMode ? "text-sky-300" : "text-emerald-300"}`}>
+            {isElectionMode ? "🗳️ Modo Elecciones — Actualiza tu respaldo" : isUpdateMode ? "🔄 Actualiza tu respaldo" : "👍 ¿A quién respaldas?"}
           </p>
-          <p className={`mt-1 text-[11px] leading-relaxed ${isUpdateMode ? "text-sky-300/60" : "text-emerald-300/60"}`}>
-            {isUpdateMode
-              ? "Han pasado 30 días — puedes cambiar tu opinión anterior."
-              : "Indica el candidato que consideras la mejor opción para el cargo."}
+          <p className={`mt-1 text-[11px] leading-relaxed ${isElectionMode ? "text-amber-300/60" : isUpdateMode ? "text-sky-300/60" : "text-emerald-300/60"}`}>
+            {isElectionMode
+              ? "Puedes cambiar tu voto una vez durante este período electoral."
+              : isUpdateMode
+                ? "Han pasado 30 días — puedes cambiar tu opinión anterior."
+                : "Indica el candidato que consideras la mejor opción para el cargo."}
           </p>
           {allowNegativeVote && (
-            <p className={`mt-1.5 text-[11px] ${isUpdateMode ? "text-sky-300/40" : "text-emerald-300/40"}`}>Paso 1 de 2</p>
+            <p className={`mt-1.5 text-[11px] ${isElectionMode ? "text-amber-300/40" : isUpdateMode ? "text-sky-300/40" : "text-emerald-300/40"}`}>Paso 1 de 2</p>
           )}
         </div>
       )}
 
       {step === "negative" && (
-        <div className={`rounded-2xl border px-4 py-3 text-center ${isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-rose-400/20 bg-rose-400/10"}`}>
-          <p className={`text-sm font-medium ${isUpdateMode ? "text-sky-300" : "text-rose-300"}`}>
-            {isUpdateMode ? "🔄 Actualiza tu rechazo" : "👎 ¿A quién rechazas?"}
+        <div className={`rounded-2xl border px-4 py-3 text-center ${isElectionMode ? "border-amber-400/20 bg-amber-400/10" : isUpdateMode ? "border-sky-400/20 bg-sky-400/10" : "border-rose-400/20 bg-rose-400/10"}`}>
+          <p className={`text-sm font-medium ${isElectionMode ? "text-amber-300" : isUpdateMode ? "text-sky-300" : "text-rose-300"}`}>
+            {isElectionMode ? "🗳️ Modo Elecciones — Actualiza tu rechazo" : isUpdateMode ? "🔄 Actualiza tu rechazo" : "👎 ¿A quién rechazas?"}
           </p>
-          <p className={`mt-1 text-[11px] leading-relaxed ${isUpdateMode ? "text-sky-300/60" : "text-rose-300/60"}`}>
-            {isUpdateMode
-              ? "Han pasado 30 días — puedes cambiar tu opinión anterior."
-              : "Señala el candidato que menos apoyarías para ocupar el cargo."}
+          <p className={`mt-1 text-[11px] leading-relaxed ${isElectionMode ? "text-amber-300/60" : isUpdateMode ? "text-sky-300/60" : "text-rose-300/60"}`}>
+            {isElectionMode
+              ? "Puedes cambiar tu voto una vez durante este período electoral."
+              : isUpdateMode
+                ? "Han pasado 30 días — puedes cambiar tu opinión anterior."
+                : "Señala el candidato que menos apoyarías para ocupar el cargo."}
           </p>
-          <p className={`mt-1.5 text-[11px] ${isUpdateMode ? "text-sky-300/40" : "text-rose-300/40"}`}>
-            {isUpdateMode ? "Paso 2 de 2 · Opcional" : "Paso 2 de 2 · Opcional"}
+          <p className={`mt-1.5 text-[11px] ${isElectionMode ? "text-amber-300/40" : isUpdateMode ? "text-sky-300/40" : "text-rose-300/40"}`}>
+            Paso 2 de 2 · Opcional
           </p>
         </div>
       )}
@@ -350,7 +391,8 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
       <VoteConfirmation
         open={step === "done"}
         pollSlug={pollSlug}
-        isUpdate={isUpdateMode}
+        isUpdate={isUpdateMode || isElectionMode}
+        isElectionMode={isElectionMode}
         canChangeAt={positiveVotedAt > 0 ? new Date(positiveVotedAt + THIRTY_DAYS_MS) : null}
       />
 

@@ -57,10 +57,12 @@ export const registerVote = onCall(
       const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
       const result = await db.runTransaction(async (transaction) => {
-        const [pollDoc, candidateDoc, lockDoc] = await Promise.all([
+        const configRef = db.collection("config").doc("global");
+        const [pollDoc, candidateDoc, lockDoc, configDoc] = await Promise.all([
           transaction.get(pollRef),
           transaction.get(candidateRef),
-          transaction.get(lockRef)
+          transaction.get(lockRef),
+          transaction.get(configRef),
         ]);
 
         if (!pollDoc.exists) {
@@ -78,28 +80,46 @@ export const registerVote = onCall(
 
         let isUpdate = false;
         let previousCandidateId: string | null = null;
+        let isElectionModeUpdate = false;
+
+        const electionModeActive = configDoc.exists && configDoc.data()?.electionModeActive === true;
 
         if (lockDoc.exists) {
           const lockData = lockDoc.data()!;
-          const votedAt = (lockData.createdAt as Timestamp).toDate();
-          const msSinceVote = Date.now() - votedAt.getTime();
 
-          if (msSinceVote < THIRTY_DAYS_MS) {
-            const canChangeAt = new Date(votedAt.getTime() + THIRTY_DAYS_MS);
-            const formatted = canChangeAt.toLocaleDateString("es-EC", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-              timeZone: "America/Guayaquil",
-            });
-            throw new HttpsError(
-              "already-exists",
-              `Tu opinión ya fue registrada. Podrás cambiarla a partir del ${formatted}.`
-            );
+          if (electionModeActive) {
+            // Election mode: allow one-time update regardless of 30-day window
+            if (lockData.electionModeUsed === true) {
+              throw new HttpsError(
+                "already-exists",
+                "Ya usaste tu cambio durante el Modo Elecciones. Tu opinión actual está registrada."
+              );
+            }
+            isUpdate = true;
+            isElectionModeUpdate = true;
+            previousCandidateId = lockData.candidateId as string;
+          } else {
+            // Normal 30-day rule
+            const votedAt = (lockData.createdAt as Timestamp).toDate();
+            const msSinceVote = Date.now() - votedAt.getTime();
+
+            if (msSinceVote < THIRTY_DAYS_MS) {
+              const canChangeAt = new Date(votedAt.getTime() + THIRTY_DAYS_MS);
+              const formatted = canChangeAt.toLocaleDateString("es-EC", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                timeZone: "America/Guayaquil",
+              });
+              throw new HttpsError(
+                "already-exists",
+                `Tu opinión ya fue registrada. Podrás cambiarla a partir del ${formatted}.`
+              );
+            }
+
+            isUpdate = true;
+            previousCandidateId = lockData.candidateId as string;
           }
-
-          isUpdate = true;
-          previousCandidateId = lockData.candidateId as string;
         }
 
         // Prevent voting positive and negative for the same candidate
@@ -154,6 +174,7 @@ export const registerVote = onCall(
           sentiment,
           createdAt: timestamp,
           ...(isUpdate ? { updatedAt: timestamp } : {}),
+          ...(isElectionModeUpdate ? { electionModeUsed: true } : {}),
         });
 
         // New vote document (kept as audit trail)
@@ -253,6 +274,7 @@ export const registerVote = onCall(
           totalVotes: nextTotalVotes,
           candidateTotal: nextCandidateVotes,
           isUpdate,
+          isElectionModeUpdate,
         };
       });
 

@@ -82,4 +82,5 @@ export interface RegisterVoteResult {
   totalVotes: number;
   candidateTotal: number;
   isUpdate?: boolean;
+  isElectionModeUpdate?: boolean;
 }

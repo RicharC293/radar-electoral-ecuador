@@ -159,6 +159,9 @@ export function AdminAppShell({ children }: { children: ReactNode }) {
             <Link href="/admin/solicitudes" className="rounded-full border border-white/15 px-4 py-2 text-sm text-white">
               Solicitudes
             </Link>
+            <Link href="/admin/configuracion" className="rounded-full border border-white/15 px-4 py-2 text-sm text-white">
+              Configuración
+            </Link>
             <button
               type="button"
               onClick={() => void handleSignOut()}
