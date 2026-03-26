@@ -87,8 +87,8 @@ export function CandidateTrendChart({
               fontSize: "12px",
             }}
             labelStyle={{ color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}
-            formatter={(value: number, name: string) => [
-              value,
+            formatter={(value, name) => [
+              value ?? 0,
               name === "positiveVotes" ? "Respaldos" : "Rechazos",
             ]}
           />
