@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { doc, setDoc } from "firebase/firestore";
 
-import { db } from "@/lib/firebase/config";
+import { adminFetch } from "@/lib/admin-fetch";
 import { useGlobalConfig } from "@/hooks/useGlobalConfig";
 
 export function GlobalConfigPanel() {
@@ -16,11 +15,10 @@ export function GlobalConfigPanel() {
     setMessage(null);
     try {
       const next = !config.electionModeActive;
-      await setDoc(
-        doc(db, "config", "global"),
-        { electionModeActive: next, updatedAt: new Date() },
-        { merge: true }
-      );
+      await adminFetch("/api/admin/config", {
+        method: "PATCH",
+        body: JSON.stringify({ electionModeActive: next }),
+      });
       setMessage(next ? "Modo Elecciones activado." : "Modo Elecciones desactivado.");
     } catch {
       setMessage("No se pudo actualizar la configuración.");
