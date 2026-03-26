@@ -9,6 +9,7 @@ import { useAdminCandidates } from "@/hooks/useAdminCandidates";
 import { useAdminPolls } from "@/hooks/useAdminPolls";
 import { ColorPalette } from "./ColorPalette";
 import { StoragePhotoPicker } from "./StoragePhotoPicker";
+import { CandidateTrendChart } from "./CandidateTrendChart";
 import type { AdminCandidate } from "@/hooks/useAdminCandidates";
 
 export function CandidatesManager() {
@@ -20,6 +21,7 @@ export function CandidatesManager() {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [trendCandidateId, setTrendCandidateId] = useState<string | null>(null);
   const [pickerTarget, setPickerTarget] = useState<string | null>(null);
   const [createPhotoUrl, setCreatePhotoUrl] = useState<string>("");
   const lockRef = useRef(false);
@@ -264,14 +266,28 @@ export function CandidatesManager() {
                     onPickerOpen={() => setPickerTarget(`edit-${candidate.id}`)}
                   />
                 ) : (
-                  <CandidateRow
-                    candidate={candidate}
-                    busy={busy}
-                    onEdit={() => setEditingId(candidate.id)}
-                    onToggle={() => void toggleCandidate(candidate.id, !candidate.isActive)}
-                    onUploadPhoto={(file) => void uploadCandidatePhoto(candidate.id, file)}
-                    onDelete={() => void deleteCandidate(candidate.id)}
-                  />
+                  <>
+                    <CandidateRow
+                      candidate={candidate}
+                      busy={busy}
+                      showingTrend={trendCandidateId === candidate.id}
+                      onEdit={() => setEditingId(candidate.id)}
+                      onToggle={() => void toggleCandidate(candidate.id, !candidate.isActive)}
+                      onUploadPhoto={(file) => void uploadCandidatePhoto(candidate.id, file)}
+                      onDelete={() => void deleteCandidate(candidate.id)}
+                      onToggleTrend={() =>
+                        setTrendCandidateId((prev) =>
+                          prev === candidate.id ? null : candidate.id
+                        )
+                      }
+                    />
+                    {trendCandidateId === candidate.id && selectedPollId && (
+                      <CandidateTrendChart
+                        pollId={selectedPollId}
+                        candidateId={candidate.id}
+                      />
+                    )}
+                  </>
                 )}
               </article>
             ))}
@@ -359,17 +375,21 @@ function PhotoField({
 function CandidateRow({
   candidate,
   busy,
+  showingTrend,
   onEdit,
   onToggle,
   onUploadPhoto,
   onDelete,
+  onToggleTrend,
 }: {
   candidate: AdminCandidate;
   busy: string | null;
+  showingTrend: boolean;
   onEdit: () => void;
   onToggle: () => void;
   onUploadPhoto: (file: File) => void;
   onDelete: () => void;
+  onToggleTrend: () => void;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr_0.9fr] lg:items-center">
@@ -439,6 +459,17 @@ function CandidateRow({
       </div>
 
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onToggleTrend}
+          className={`rounded-full border px-4 py-2 text-sm transition ${
+            showingTrend
+              ? "border-sky-400/40 bg-sky-400/10 text-sky-300"
+              : "border-white/15 text-white/60 hover:text-white"
+          }`}
+        >
+          {showingTrend ? "Ocultar tendencia" : "Ver tendencia"}
+        </button>
         <button
           type="button"
           onClick={onDelete}

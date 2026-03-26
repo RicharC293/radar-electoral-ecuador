@@ -127,6 +127,13 @@ export const registerVote = onCall(
         const nextTotalVotes = isUpdate ? previousTotalVotes : previousTotalVotes + 1;
         const nextCandidateVotes = Number(candidateDoc.data()?.totalVotes ?? 0) + candidateVoteIncrement;
 
+        const today = new Date().toISOString().slice(0, 10);
+        const candidateDailyRef = pollRef
+          .collection("candidateStats")
+          .doc(input.candidateId)
+          .collection("daily")
+          .doc(today);
+
         // Decrement old candidate if switching candidate
         if (isChangingCandidate) {
           const oldCandidateRef = pollRef.collection("candidates").doc(previousCandidateId!);
@@ -207,6 +214,39 @@ export const registerVote = onCall(
           },
           { merge: true }
         );
+
+        // Daily stats per candidate (for trend charts)
+        if (candidateVoteIncrement !== 0) {
+          transaction.set(
+            candidateDailyRef,
+            {
+              dateKey: today,
+              [sentimentField]: FieldValue.increment(candidateVoteIncrement),
+              totalVotes: FieldValue.increment(candidateVoteIncrement),
+              updatedAt: timestamp,
+            },
+            { merge: true }
+          );
+        }
+
+        // Decrement old candidate daily stats when switching
+        if (isChangingCandidate) {
+          const oldCandidateDailyRef = pollRef
+            .collection("candidateStats")
+            .doc(previousCandidateId!)
+            .collection("daily")
+            .doc(today);
+          transaction.set(
+            oldCandidateDailyRef,
+            {
+              dateKey: today,
+              [sentimentField]: FieldValue.increment(-1),
+              totalVotes: FieldValue.increment(-1),
+              updatedAt: timestamp,
+            },
+            { merge: true }
+          );
+        }
 
         return {
           success: true as const,
