@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { ConfettiLayer } from "@/components/results/ConfettiLayer";
 import { VoteTicker } from "@/components/results/VoteTicker";
 import { CandidateBioModal } from "@/components/voting/CandidateBioModal";
+import { RequestCandidateModal } from "@/components/forms/RequestCandidateModal";
 import { PulseDot } from "@/components/ui/PulseDot";
 import { useConfetti } from "@/hooks/useConfetti";
 import { useRealtimePollData } from "@/hooks/useRealtimePollData";
@@ -19,6 +20,7 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
   const confettiActive = useConfetti(lastChange);
   const [sentiment, setSentiment] = useState<VoteSentiment>("positive");
   const [bioCandidate, setBioCandidate] = useState<Candidate | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
 
   const activeRanked = poll.allowNegativeVote
     ? sentiment === "positive"
@@ -71,8 +73,8 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
         <VoteTicker city={poll.lastVoteCity} />
       </div>
 
-      {/* Back to vote */}
-      <div className="px-5 pb-5">
+      {/* Back to vote + propose candidate */}
+      <div className="flex flex-col gap-2 px-5 pb-5">
         <Link
           href="/"
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
@@ -83,6 +85,17 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
           </svg>
           Participar en el sondeo
         </Link>
+        <button
+          type="button"
+          onClick={() => setRequestOpen(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-xs font-medium text-white/35 transition-colors hover:text-white/60"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4M12 16h.01" />
+          </svg>
+          ¿No encuentras a tu candidato? Proponlo aquí
+        </button>
       </div>
 
     </section>
@@ -92,6 +105,13 @@ export function FullscreenResults({ poll }: { poll: Poll }) {
       open={!!bioCandidate}
       candidate={bioCandidate}
       onClose={() => setBioCandidate(null)}
+    />
+
+    {/* Request candidate modal */}
+    <RequestCandidateModal
+      open={requestOpen}
+      onClose={() => setRequestOpen(false)}
+      pollId={poll.id}
     />
     </>
   );
