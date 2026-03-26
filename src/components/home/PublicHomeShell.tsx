@@ -189,6 +189,24 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
     } catch (cause) {
       const msg = cause instanceof Error ? cause.message : "Intenta nuevamente.";
       const isAlready = msg.includes("Ya registramos");
+
+      if (isAlready) {
+        // Vote already exists in Firebase — sync localStorage and advance step
+        if (sentiment === "positive") {
+          setPositiveVotedId(candidate.id);
+          saveVote(pollId, candidate.id, "positive");
+          if (allowNegativeVote) {
+            setStep("negative");
+          } else {
+            setStep("done");
+          }
+        } else {
+          setNegativeVotedId(candidate.id);
+          saveVote(pollId, candidate.id, "negative");
+          setStep("done");
+        }
+      }
+
       pushToast({
         tone: isAlready ? "info" : "error",
         title: isAlready ? "Ya participaste" : "Algo salió mal",
