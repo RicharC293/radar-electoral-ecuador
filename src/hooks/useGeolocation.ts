@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getBrowserGeolocation, type GeoLocationSnapshot } from "@/lib/geolocation";
-
-export type GeoPermissionStatus = "idle" | "requesting" | "granted" | "denied";
 
 const fallback: GeoLocationSnapshot = {
   latitude: null,
@@ -15,26 +13,24 @@ const fallback: GeoLocationSnapshot = {
 };
 
 /**
- * Lazy geolocation hook — does NOT auto-request on mount.
- * Call `request()` to trigger the browser permission dialog,
- * or `dismiss()` to skip location without requesting it.
+ * Resolves the user's location via IP — no browser permission required.
  */
 export function useGeolocation() {
   const [location, setLocation] = useState<GeoLocationSnapshot>(fallback);
-  const [status, setStatus] = useState<GeoPermissionStatus>("idle");
+  const [loading, setLoading] = useState(true);
 
-  const request = useCallback(() => {
-    if (status !== "idle") return;
-    setStatus("requesting");
+  useEffect(() => {
+    let active = true;
+
     void getBrowserGeolocation().then((result) => {
-      setLocation(result);
-      setStatus(result.latitude !== null ? "granted" : "denied");
+      if (active) {
+        setLocation(result);
+        setLoading(false);
+      }
     });
-  }, [status]);
 
-  const dismiss = useCallback(() => {
-    setStatus("denied");
+    return () => { active = false; };
   }, []);
 
-  return { location, status, request, dismiss };
+  return { location, loading };
 }
