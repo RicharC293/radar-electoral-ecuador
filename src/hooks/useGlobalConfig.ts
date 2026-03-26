@@ -19,17 +19,22 @@ export function useGlobalConfig() {
 
   useEffect(() => {
     const ref = doc(db, "config", "global");
-    const unsub = onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setConfig({
-          electionModeActive: data.electionModeActive === true,
-        });
-      } else {
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        setConfig(
+          snap.exists()
+            ? { electionModeActive: snap.data().electionModeActive === true }
+            : defaultConfig
+        );
+        setLoading(false);
+      },
+      () => {
+        // Permission denied or network error — fall back to defaults
         setConfig(defaultConfig);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
     return unsub;
   }, []);
 

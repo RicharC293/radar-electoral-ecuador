@@ -28,6 +28,13 @@ service cloud.firestore {
       }
     }
 
+    match /config/{docId} {
+      // Global config is public read (e.g. electionModeActive flag)
+      allow read: if true;
+      // Only admins can write global config
+      allow write: if isAdmin();
+    }
+
     match /candidateRequests/{requestId} {
       allow create: if true;
       allow read, update, delete: if isAdmin();
