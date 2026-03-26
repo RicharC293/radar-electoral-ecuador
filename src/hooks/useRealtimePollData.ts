@@ -11,7 +11,7 @@ import type { Candidate } from "@/types";
  * Single real-time hook that replaces both `useRealtimeCandidates` and `useRealtimeResults`.
  *
  * Returns:
- *  - `candidates` sorted by sortOrder (for voting grids)
+ *  - `candidates` in a random order shuffled once per page load (for voting grids)
  *  - `ranked` sorted by totalVotes desc (for results views)
  *  - `lastChange` candidateId of last modified doc (for confetti / highlight)
  */
@@ -19,12 +19,15 @@ export function useRealtimePollData(pollId: string | null) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [lastChange, setLastChange] = useState<string | null>(null);
   const mounted = useRef(false);
+  // Shuffle order set once on first data arrival — not reset by real-time updates
+  const shuffledOrderRef = useRef<string[] | null>(null);
 
   useEffect(() => {
     if (!pollId) {
       setCandidates([]);
       setLastChange(null);
       mounted.current = false;
+      shuffledOrderRef.current = null;
       return;
     }
 
@@ -43,20 +46,36 @@ export function useRealtimePollData(pollId: string | null) {
             .docChanges()
             .find((change) => change.type === "modified" && change.doc.exists());
           setLastChange(modified?.doc.id ?? null);
+        } else if (items.length > 0) {
+          // First load: build a random order and keep it stable for subsequent updates
+          const ids = items.map((c) => c.id);
+          for (let i = ids.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [ids[i], ids[j]] = [ids[j], ids[i]];
+          }
+          shuffledOrderRef.current = ids;
         }
 
-        setCandidates(items);
+        // Apply stable shuffle order if available
+        if (shuffledOrderRef.current) {
+          const order = shuffledOrderRef.current;
+          setCandidates([...items].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)));
+        } else {
+          setCandidates(items);
+        }
+
         mounted.current = true;
       },
       () => {
         setCandidates([]);
         setLastChange(null);
         mounted.current = false;
+        shuffledOrderRef.current = null;
       }
     );
   }, [pollId]);
 
-  // Active candidates for voting grid (only active ones)
+  // Active candidates for voting grid (only active ones, preserves shuffle order)
   const activeCandidates = useMemo(
     () => candidates.filter((c) => c.isActive),
     [candidates]
