@@ -15,7 +15,7 @@ const fallback: GeoLocationSnapshot = {
 };
 
 /** IP-based geolocation — no permission required, approximate. */
-async function getIPGeolocation(): Promise<GeoLocationSnapshot> {
+export async function getIPGeolocation(): Promise<GeoLocationSnapshot> {
   try {
     const res = await fetch("https://ipapi.co/json/", {
       signal: AbortSignal.timeout(5000),

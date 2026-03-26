@@ -9,6 +9,7 @@ import { CandidateBioModal } from "@/components/voting/CandidateBioModal";
 import { RequestCandidateModal } from "@/components/forms/RequestCandidateModal";
 import { InfoBanner } from "@/components/ui/InfoBanner";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { LocationExplainer } from "@/components/ui/LocationExplainer";
 import { usePublicPolls } from "@/hooks/usePublicPolls";
 import { useRealtimePollData } from "@/hooks/useRealtimePollData";
 import { useVote } from "@/hooks/useVote";
@@ -102,7 +103,7 @@ function saveVote(pollId: string, candidateId: string, sentiment: VoteSentiment)
 
 function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; pollSlug: string; allowNegativeVote: boolean }) {
   const { candidates, activeCandidates } = useRealtimePollData(pollId);
-  const { location } = useGeolocation();
+  const { location, status: geoStatus, request: requestGeo, dismiss: dismissGeo } = useGeolocation();
   const { submitVote } = useVote();
   const { pushToast } = useToast();
 
@@ -449,6 +450,13 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
           Radar informativo · No reemplaza ningún proceso electoral oficial
         </p>
       </div>
+
+      {/* Location permission explainer */}
+      <LocationExplainer
+        visible={geoStatus === "idle" && step !== "done"}
+        onAllow={() => void requestGeo()}
+        onDismiss={() => void dismissGeo()}
+      />
 
       {/* Request candidate modal */}
       <RequestCandidateModal

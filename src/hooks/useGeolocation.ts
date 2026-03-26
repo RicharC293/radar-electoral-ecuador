@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { getBrowserGeolocation, type GeoLocationSnapshot } from "@/lib/geolocation";
+import { getBrowserGeolocation, getIPGeolocation, type GeoLocationSnapshot } from "@/lib/geolocation";
+
+export type GeoPermissionStatus = "idle" | "requesting" | "done";
 
 const fallback: GeoLocationSnapshot = {
   latitude: null,
@@ -13,24 +15,34 @@ const fallback: GeoLocationSnapshot = {
 };
 
 /**
- * Resolves the user's location via IP — no browser permission required.
+ * Lazy geolocation hook.
+ *
+ * - `status === "idle"`       → user hasn't decided yet (show LocationExplainer)
+ * - `request()`               → user clicked "Permitir" → triggers browser GPS dialog
+ *                               (GPS if granted, IP fallback if denied)
+ * - `dismiss()`               → user clicked "Ahora no" → resolves via IP silently
+ * - `status === "requesting"` → resolving in progress
+ * - `status === "done"`       → location resolved (or failed), ready to use
  */
 export function useGeolocation() {
   const [location, setLocation] = useState<GeoLocationSnapshot>(fallback);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<GeoPermissionStatus>("idle");
 
-  useEffect(() => {
-    let active = true;
+  const request = useCallback(async () => {
+    if (status !== "idle") return;
+    setStatus("requesting");
+    const result = await getBrowserGeolocation(); // shows browser dialog, falls back to IP
+    setLocation(result);
+    setStatus("done");
+  }, [status]);
 
-    void getBrowserGeolocation().then((result) => {
-      if (active) {
-        setLocation(result);
-        setLoading(false);
-      }
-    });
+  const dismiss = useCallback(async () => {
+    if (status !== "idle") return;
+    setStatus("requesting");
+    const result = await getIPGeolocation(); // silent IP, no browser dialog
+    setLocation(result);
+    setStatus("done");
+  }, [status]);
 
-    return () => { active = false; };
-  }, []);
-
-  return { location, loading };
+  return { location, status, request, dismiss };
 }

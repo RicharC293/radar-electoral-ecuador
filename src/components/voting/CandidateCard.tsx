@@ -16,7 +16,7 @@ export function CandidateCard({
   pollId: string;
   candidate: Candidate;
 }) {
-  const { location } = useGeolocation();
+  const { location } = useGeolocation(); // location resolved by parent's LocationExplainer
   const { submitVote, loading, success, error } = useVote();
   const { pushToast } = useToast();
   const [done, setDone] = useState(false);
