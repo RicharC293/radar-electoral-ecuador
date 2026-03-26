@@ -21,7 +21,7 @@ export default function PrivacidadPage() {
         Política de Privacidad
       </h1>
       <p className="mt-2 text-sm text-white/40">
-        Última actualización: 22 de marzo de 2026
+        Última actualización: 25 de marzo de 2026
       </p>
 
       <div className="mt-8 space-y-6 text-sm leading-relaxed text-white/65">
@@ -57,11 +57,16 @@ export default function PrivacidadPage() {
               abuso y limitar solicitudes excesivas.
             </li>
             <li>
-              <strong>Ubicación aproximada:</strong> ciudad y provincia
-              derivadas de la IP o de la geolocalización del navegador (si el
-              usuario lo autoriza). Las coordenadas se redondean para no
-              permitir la identificación precisa. Se utiliza únicamente para
-              mostrar estadísticas geográficas agregadas.
+              <strong>Ubicación geográfica:</strong> la Plataforma solicita
+              acceso a la ubicación GPS del dispositivo mediante el diálogo
+              nativo del navegador. Si el usuario concede el permiso, se
+              utilizan las coordenadas precisas junto con ciudad y provincia
+              obtenidas a través del servicio de geolocalización por IP
+              ipapi.co. Si el usuario deniega el permiso, se recurre
+              exclusivamente a la geolocalización por IP (aproximada, sin
+              diálogo adicional). En ningún caso se almacenan coordenadas
+              exactas; los datos de ubicación se usan únicamente para mostrar
+              estadísticas geográficas agregadas (ciudad y provincia).
             </li>
             <li>
               <strong>Agente de usuario (User-Agent):</strong> información
@@ -117,6 +122,13 @@ export default function PrivacidadPage() {
             comunicación entre el usuario y la Plataforma se realiza mediante
             conexiones cifradas (HTTPS/TLS).
           </p>
+          <p className="mt-3">
+            La resolución de ciudad y provincia por IP se realiza a través del
+            servicio externo <strong>ipapi.co</strong>, que procesa la
+            dirección IP del usuario bajo su propia política de privacidad
+            (<a href="https://ipapi.co/privacy/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white/80">ipapi.co/privacy</a>).
+            La Plataforma no almacena la dirección IP real del usuario.
+          </p>
         </section>
 
         <section>
@@ -127,9 +139,22 @@ export default function PrivacidadPage() {
             La Plataforma <strong>no vende, alquila ni comparte</strong> datos
             personales con terceros. Los datos no se transfieren a ninguna
             entidad externa salvo los proveedores de infraestructura técnica
-            (Google Cloud Platform) necesarios para el funcionamiento del
-            servicio, quienes actúan bajo sus propias políticas de privacidad
-            y protección de datos.
+            necesarios para el funcionamiento del servicio:
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>
+              <strong>Google Cloud Platform (Firebase/Firestore):</strong> almacenamiento
+              de datos y base de datos en tiempo real.
+            </li>
+            <li>
+              <strong>ipapi.co:</strong> resolución de ciudad y provincia a
+              partir de la dirección IP del usuario para enriquecer las
+              estadísticas geográficas.
+            </li>
+          </ul>
+          <p className="mt-3">
+            Todos estos proveedores actúan bajo sus propias políticas de
+            privacidad y protección de datos.
           </p>
         </section>
 

@@ -21,7 +21,7 @@ export default function TerminosPage() {
         Términos y Condiciones de Uso
       </h1>
       <p className="mt-2 text-sm text-white/40">
-        Última actualización: 22 de marzo de 2026
+        Última actualización: 25 de marzo de 2026
       </p>
 
       <div className="mt-8 space-y-6 text-sm leading-relaxed text-white/65">
@@ -92,7 +92,34 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="mb-2 text-base font-semibold text-white/80">
-            4. Uso aceptable
+            4. Una participación por persona
+          </h2>
+          <p>
+            Cada usuario puede participar <strong>una única vez</strong> por
+            sondeo. Una vez registrada la opinión, no podrá ser modificada ni
+            eliminada. La Plataforma utiliza mecanismos técnicos (huella
+            digital del navegador y datos de red) para detectar y prevenir
+            participaciones duplicadas. Intentar eludir estos mecanismos
+            constituye una violación de estos términos.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-base font-semibold text-white/80">
+            5. Orden de presentación de candidatos
+          </h2>
+          <p>
+            Los candidatos se presentan en un <strong>orden aleatorio</strong>
+            generado en cada visita, con el fin de garantizar igualdad de
+            visibilidad y evitar sesgos derivados de la posición en pantalla.
+            El orden no refleja ningún criterio de relevancia, popularidad ni
+            preferencia editorial.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-base font-semibold text-white/80">
+            6. Uso aceptable
           </h2>
           <p>El usuario se compromete a:</p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
@@ -103,6 +130,9 @@ export default function TerminosPage() {
             <li>
               No manipular, automatizar ni alterar los resultados mediante bots,
               scripts u otros mecanismos.
+            </li>
+            <li>
+              No intentar eludir el límite de una participación por persona.
             </li>
             <li>
               No presentar los resultados de la Plataforma como encuestas
@@ -117,7 +147,7 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="mb-2 text-base font-semibold text-white/80">
-            5. Propiedad intelectual
+            7. Propiedad intelectual
           </h2>
           <p>
             Las imágenes de los candidatos son de dominio público o han sido
@@ -130,7 +160,7 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="mb-2 text-base font-semibold text-white/80">
-            6. Modificaciones
+            8. Modificaciones
           </h2>
           <p>
             El operador se reserva el derecho de modificar, suspender o
@@ -143,7 +173,7 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="mb-2 text-base font-semibold text-white/80">
-            7. Legislación aplicable
+            9. Legislación aplicable
           </h2>
           <p>
             Estos términos se rigen por las leyes de la República del Ecuador.
@@ -155,7 +185,7 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="mb-2 text-base font-semibold text-white/80">
-            8. Aceptación
+            10. Aceptación
           </h2>
           <p>
             Al acceder y utilizar la Plataforma, el usuario declara haber leído,
