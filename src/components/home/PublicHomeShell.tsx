@@ -260,8 +260,11 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
       {step === "positive" && (
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center">
           <p className="text-sm font-medium text-emerald-300">👍 ¿A quién respaldas?</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-emerald-300/60">
+            Indica el candidato que consideras la mejor opción para el cargo.
+          </p>
           {allowNegativeVote && (
-            <p className="mt-1 text-[11px] text-emerald-300/50">Paso 1 de 2</p>
+            <p className="mt-1.5 text-[11px] text-emerald-300/40">Paso 1 de 2</p>
           )}
         </div>
       )}
@@ -269,7 +272,10 @@ function VotingGrid({ pollId, pollSlug, allowNegativeVote }: { pollId: string; p
       {step === "negative" && (
         <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-center">
           <p className="text-sm font-medium text-rose-300">👎 ¿A quién rechazas?</p>
-          <p className="mt-1 text-[11px] text-rose-300/50">Paso 2 de 2 · Opcional</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-rose-300/60">
+            Señala el candidato que menos apoyarías para ocupar el cargo.
+          </p>
+          <p className="mt-1.5 text-[11px] text-rose-300/40">Paso 2 de 2 · Opcional</p>
         </div>
       )}
 
